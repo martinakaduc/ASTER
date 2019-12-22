@@ -19,8 +19,8 @@ We have identified a bug we accidentally made in the code that causes only part 
 
 ## Prerequisites
 
-ASTER was developed and tested with **TensorFlow r1.4**.
-ASTER now can be used with **TensorFlow r1.4**. Ported by Duc Nguyen.
+ASTER was developed and tested with **TensorFlow r1.4**.  
+ASTER now can be used with **TensorFlow r1.14**. Ported by Duc Nguyen.
 
 ASTER requires [Protocol Buffers](https://github.com/google/protobuf) (version>=2.6). Besides, in Ubuntu 16.04:
 ```
