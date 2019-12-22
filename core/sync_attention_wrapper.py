@@ -14,7 +14,9 @@ class SyncAttentionWrapper(seq2seq.AttentionWrapper):
                cell_input_fn=None,
                output_attention=True,
                initial_cell_state=None,
-               name=None):
+               name=None,
+               attention_layer=None,
+               attention_fn=None):
     if not isinstance(cell, (rnn.LSTMCell, rnn.GRUCell)):
       raise ValueError('SyncAttentionWrapper only supports LSTMCell and GRUCell, '
                        'Got: {}'.format(cell))
@@ -26,35 +28,41 @@ class SyncAttentionWrapper(seq2seq.AttentionWrapper):
       cell_input_fn=cell_input_fn,
       output_attention=output_attention,
       initial_cell_state=initial_cell_state,
-      name=name
+      name=name,
+      attention_layer=attention_layer,
+      attention_fn=attention_fn
     )
-  
+
   def call(self, inputs, state):
     if not isinstance(state, seq2seq.AttentionWrapperState):
       raise TypeError("Expected state to be instance of AttentionWrapperState. "
                       "Received type %s instead."  % type(state))
 
     if self._is_multi:
-      previous_alignments = state.alignments
+      previous_attention_state = state.attention_state
       previous_alignment_history = state.alignment_history
     else:
-      previous_alignments = [state.alignments]
+      previous_attention_state = [state.attention_state]
       previous_alignment_history = [state.alignment_history]
 
     all_alignments = []
     all_attentions = []
     all_histories = []
+    all_attention_state = []
+
     for i, attention_mechanism in enumerate(self._attention_mechanisms):
       if isinstance(self._cell, rnn.LSTMCell):
         rnn_cell_state = state.cell_state.h
       else:
         rnn_cell_state = state.cell_state
-      attention, alignments = _compute_attention(
-          attention_mechanism, rnn_cell_state, previous_alignments[i],
+
+      attention, alignments, next_attention_state = _compute_attention(
+          attention_mechanism, rnn_cell_state, previous_attention_state[i],
           self._attention_layers[i] if self._attention_layers else None)
       alignment_history = previous_alignment_history[i].write(
           state.time, alignments) if self._alignment_history else ()
 
+      all_attention_state.append(next_attention_state)
       all_alignments.append(alignments)
       all_histories.append(alignment_history)
       all_attentions.append(attention)
@@ -68,9 +76,10 @@ class SyncAttentionWrapper(seq2seq.AttentionWrapper):
         time=state.time + 1,
         cell_state=next_cell_state,
         attention=attention,
+        attention_state=self._item_or_tuple(all_attention_state),
         alignments=self._item_or_tuple(all_alignments),
         alignment_history=self._item_or_tuple(all_histories))
-    
+
     if self._output_attention:
       return attention, next_state
     else:

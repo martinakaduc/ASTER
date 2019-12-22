@@ -17,14 +17,14 @@ class Convnet(object):
     self._is_training = is_training
 
   def preprocess(self, resized_inputs, scope=None):
-    with tf.variable_scope(scope, 'ConvnetPreprocess', [resized_inputs]):
+    with tf.compat.v1.variable_scope(scope, 'ConvnetPreprocess', [resized_inputs]):
       preprocessed_inputs = (2.0 / 255.0) * resized_inputs - 1.0
       if self._summarize_activations:
         tf.summary.image('preprocessed_inputs', preprocessed_inputs, max_outputs=1)
     return preprocessed_inputs
-  
+
   def extract_features(self, preprocessed_inputs, scope=None):
-    with tf.variable_scope(scope, 'Convnet', [preprocessed_inputs]):
+    with tf.compat.v1.variable_scope(scope, 'Convnet', [preprocessed_inputs]):
       shape_assert = self._shape_check(preprocessed_inputs)
       if shape_assert is None:
         shape_assert = tf.no_op()
@@ -38,7 +38,7 @@ class Convnet(object):
 
   def _shape_check(self, preprocessed_inputs):
     return None
-  
+
   @abstractmethod
   def _output_endpoints(self, feature_maps_dict):
     raise NotImplementedError

@@ -98,5 +98,5 @@ class LabelMap(object):
     else:
       raise ValueError('Wrong dtype of labels: {}'.format(labels.dtype))
     chars = self._label_to_char_table.lookup(labels)
-    text = tf.reduce_join(chars, axis=1)
+    text = tf.strings.reduce_join(chars, axis=1)
     return text

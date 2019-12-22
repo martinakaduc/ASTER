@@ -45,8 +45,9 @@ class MultiPredictorsRecognitionModel(model.Model):
       })
     else:
       preprocessed_inputs = self.preprocess(resized_images)
-    with tf.variable_scope(None, 'FeatureExtractor', [preprocessed_inputs]) as feat_scope:
+    with tf.compat.v1.variable_scope(None, 'FeatureExtractor', [preprocessed_inputs]) as feat_scope:
       feature_maps = self._feature_extractor.extract_features(preprocessed_inputs, scope=feat_scope)
+
     for name, predictor in self._predictors_dict.items():
       predictor_outputs = predictor.predict(feature_maps, scope='{}/Predictor'.format(name))
       predictions_dict.update({
@@ -55,7 +56,7 @@ class MultiPredictorsRecognitionModel(model.Model):
     return predictions_dict
 
   def loss(self, predictions_dict, scope=None):
-    with tf.variable_scope(scope, 'Loss', list(predictions_dict.values())):
+    with tf.compat.v1.variable_scope(scope, 'Loss', list(predictions_dict.values())):
       losses_dict = {}
       for name, predictor in self._predictors_dict.items():
         predictor_loss = predictor.loss({
@@ -63,7 +64,7 @@ class MultiPredictorsRecognitionModel(model.Model):
           for k, v in predictions_dict.items() if k.startswith('{}/'.format(name))
         }, scope='{}/Loss'.format(name))
         losses_dict[name] = predictor_loss
-      
+
       if self._spatial_transformer is not None and self._keypoint_supervision == True:
         control_points = predictions_dict['control_points']
         num_control_points = tf.shape(control_points)[1]
@@ -80,7 +81,7 @@ class MultiPredictorsRecognitionModel(model.Model):
     return losses_dict
 
   def postprocess(self, predictions_dict, scope=None):
-    with tf.variable_scope(scope, 'Postprocess', list(predictions_dict.values())):
+    with tf.compat.v1.variable_scope(scope, 'Postprocess', list(predictions_dict.values())):
       recognition_text_list = []
       recognition_scores_list = []
       for name, predictor in self._predictors_dict.items():
@@ -95,7 +96,7 @@ class MultiPredictorsRecognitionModel(model.Model):
     return aggregated_recognition_dict
 
   def provide_groundtruth(self, groundtruth_lists, scope=None):
-    with tf.variable_scope(scope, 'ProvideGroundtruth', list(groundtruth_lists.values())):
+    with tf.compat.v1.variable_scope(scope, 'ProvideGroundtruth', list(groundtruth_lists.values())):
       # provide groundtruth_text to all predictors
       groundtruth_text = tf.stack(
         groundtruth_lists[fields.InputDataFields.groundtruth_text], axis=0)
@@ -129,7 +130,7 @@ class MultiPredictorsRecognitionModel(model.Model):
       text_list: a list of tensors with shape [batch_size]
       scores_list: a list of tensors with shape [batch_size]
     """
-    with tf.variable_scope(scope, 'AggregateRecognitionResults', (text_list + scores_list)):
+    with tf.compat.v1.variable_scope(scope, 'AggregateRecognitionResults', (text_list + scores_list)):
       stacked_text = tf.stack(text_list, axis=1)
       stacked_scores = tf.stack(scores_list, axis=1)
       argmax_scores = tf.argmax(stacked_scores, axis=1)

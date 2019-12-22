@@ -19,12 +19,12 @@ class FeatureExtractor(object):
     self._is_training = is_training
 
   def preprocess(self, resized_inputs, scope=None):
-    with tf.variable_scope(scope, 'FeatureExtractorPreprocess', [resized_inputs]) as preproc_scope:
+    with tf.compat.v1.variable_scope(scope, 'FeatureExtractorPreprocess', [resized_inputs]) as preproc_scope:
       preprocessed_inputs = self._convnet.preprocess(resized_inputs, preproc_scope)
     return preprocessed_inputs
 
   def extract_features(self, preprocessed_inputs, scope=None):
-    with tf.variable_scope(scope, 'FeatureExtractor', [preprocessed_inputs]):
+    with tf.compat.v1.variable_scope(scope, 'FeatureExtractor', [preprocessed_inputs]):
       feature_maps = self._convnet.extract_features(preprocessed_inputs)
 
     if len(self._brnn_fn_list) > 0:

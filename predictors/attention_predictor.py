@@ -62,8 +62,8 @@ class AttentionPredictor(predictor.Predictor):
     if not isinstance(feature_maps, (list, tuple)):
       raise ValueError('`feature_maps` must be list of tuple')
 
-    with tf.variable_scope(scope, 'Predict', feature_maps):
-      batch_size = shape_utils.combined_static_and_dynamic_shape(feature_maps[0])[0]      
+    with tf.compat.v1.variable_scope(scope, 'Predict', feature_maps):
+      batch_size = shape_utils.combined_static_and_dynamic_shape(feature_maps[0])[0]
       decoder_cell = self._build_decoder_cell(feature_maps)
       decoder = self._build_decoder(decoder_cell, batch_size)
 
@@ -103,7 +103,7 @@ class AttentionPredictor(predictor.Predictor):
 
   def loss(self, predictions_dict, scope=None):
     assert 'logits' in predictions_dict
-    with tf.variable_scope(scope, 'Loss', list(predictions_dict.values())):
+    with tf.compat.v1.variable_scope(scope, 'Loss', list(predictions_dict.values())):
       loss_tensor = self._loss(
         predictions_dict['logits'],
         self._groundtruth_dict['decoder_targets'],
@@ -135,17 +135,18 @@ class AttentionPredictor(predictor.Predictor):
       decoder_inputs = decoder_inputs[:,:self._max_num_steps]
       decoder_targets = decoder_targets[:,:self._max_num_steps]
       decoder_lengths = tf.minimum(decoder_lengths, self._max_num_steps)
-      
+
       self._groundtruth_dict['decoder_inputs'] = decoder_inputs
       self._groundtruth_dict['decoder_targets'] = decoder_targets
       self._groundtruth_dict['decoder_lengths'] = decoder_lengths
 
   def postprocess(self, predictions_dict, scope=None):
     assert 'scores' in predictions_dict
-    with tf.variable_scope(scope, 'Postprocess', list(predictions_dict.values())):
+    with tf.compat.v1.variable_scope(scope, 'Postprocess', list(predictions_dict.values())):
       text = self._label_map.labels_to_text(predictions_dict['labels'])
       if self._reverse:
-        text = ops.string_reverse(text)
+        text = text[::-1]
+        # text = ops.string_reverse(text)
       scores = predictions_dict['scores']
     return {'text': text, 'scores': scores}
 
@@ -173,7 +174,7 @@ class AttentionPredictor(predictor.Predictor):
         memory,
         memory_sequence_length=None
       )
-    
+
     feature_sequences = [tf.squeeze(map, axis=1) for map in feature_maps]
     if self._multi_attention:
       attention_mechanism = []
@@ -187,7 +188,7 @@ class AttentionPredictor(predictor.Predictor):
 
   def _build_decoder(self, decoder_cell, batch_size):
     embedding_fn = functools.partial(tf.one_hot, depth=self.num_classes)
-    output_layer = tf.layers.Dense(
+    output_layer = tf.compat.v1.layers.Dense(
       self.num_classes,
       activation=None,
       use_bias=True,

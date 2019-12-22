@@ -16,7 +16,7 @@ class Model(object):
     self._groundtruth_dict = {}
 
   def preprocess(self, resized_inputs, scope=None):
-    with tf.variable_scope(scope, 'ModelPreprocess', [resized_inputs]) as preprocess_scope:
+    with tf.compat.v1.variable_scope(scope, 'ModelPreprocess', [resized_inputs]) as preprocess_scope:
       if resized_inputs.dtype is not tf.float32:
         raise ValueError('`preprocess` expects a tf.float32 tensor')
       preprocess_inputs = self._feature_extractor.preprocess(resized_inputs, scope=preprocess_scope)

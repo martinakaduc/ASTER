@@ -34,7 +34,7 @@ class Resnet(convnet.Convnet):
                      subsample=None,
                      is_training=True,
                      scope=None):
-    with tf.variable_scope(scope, 'Unit', [inputs]):
+    with tf.compat.v1.variable_scope(scope, 'Unit', [inputs]):
       if subsample is None:
         conv1 = conv2d(inputs, num_outputs, kernel_size=1, stride=[1,1], scope='Conv1')
         shortcut = tf.identity(inputs, name='ShortCut')
@@ -52,14 +52,14 @@ class Resnet(convnet.Convnet):
                       first_subsample=None,
                       is_training=True,
                       scope=None):
-    with tf.variable_scope(scope, 'Block', [inputs]):
+    with tf.compat.v1.variable_scope(scope, 'Block', [inputs]):
       unit_output = self._residual_unit(inputs, num_outputs, subsample=first_subsample, is_training=is_training, scope='Unit_1')
       for i in range(1, num_units):
         unit_output = self._residual_unit(unit_output, num_outputs, subsample=None, scope='Unit_{}'.format(i+1))
     return unit_output
 
   def _resnet(self, inputs, is_training=True, scope=None):
-    with tf.variable_scope(scope, 'ResNet', [inputs]), \
+    with tf.compat.v1.variable_scope(scope, 'ResNet', [inputs]), \
          arg_scope(self._conv_hyperparams), \
          arg_scope([conv2d], kernel_size=3, padding='SAME', stride=1):
       conv_0 = conv2d(inputs, 32, scope='Conv0')

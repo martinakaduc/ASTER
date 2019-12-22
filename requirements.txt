@@ -1,0 +1,3 @@
+tensorflow==1.4.0
+Pillow
+gast==0.2.2

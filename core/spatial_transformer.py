@@ -36,15 +36,15 @@ class SpatialTransformer(object):
     self._init_bias = self._build_init_bias(init_bias_pattern, self._margins, self._activation)
 
   def batch_transform(self, preprocessed_inputs):
-    with tf.variable_scope('LocalizationNet', [preprocessed_inputs]):
-      resized_images = tf.image.resize_images(preprocessed_inputs, self._localization_image_size)
+    with tf.compat.v1.variable_scope('LocalizationNet', [preprocessed_inputs]):
+      resized_images = tf.image.resize(preprocessed_inputs, self._localization_image_size)
       # preprocessed_images = self._preprocess(resized_images)
       input_control_points = self._localize(resized_images)
-    
-    with tf.name_scope('GridGenerator', [input_control_points]):
+
+    with tf.name_scope('GridGenerator', None, [input_control_points]):
       sampling_grid = self._batch_generate_grid(input_control_points)
 
-    with tf.name_scope('Sampler', [sampling_grid, preprocessed_inputs]):
+    with tf.name_scope('Sampler', None, [sampling_grid, preprocessed_inputs]):
       rectified_images = self._batch_sample(preprocessed_inputs, sampling_grid)
 
     return {
@@ -70,8 +70,8 @@ class SpatialTransformer(object):
         activation_fn=None,
         normalizer_fn=None)
       if self._summarize_activations:
-        tf.summary.histogram('fc1', fc1)
-        tf.summary.histogram('fc2', fc2)
+        tf.compat.v1.summary.histogram('fc1', fc1)
+        tf.compat.v1.summary.histogram('fc2', fc2)
     if self._activation == 'sigmoid':
       ctrl_pts = tf.sigmoid(fc2)
     elif self._activation == 'none':
@@ -104,18 +104,18 @@ class SpatialTransformer(object):
     k = self._num_control_points
     G = tf.constant(self._output_grid.reshape([-1, 2]), tf.float32) # => [n, 2]
     n = G.shape[0]
-    
+
     G_tile = tf.tile(tf.expand_dims(G, axis=1), [1,k,1]) # => [n,k,2]
     C_tile = tf.expand_dims(C, axis=0) # => [1, k, 2]
     G_diff = G_tile - C_tile   # => [n, k, 2]
-    rbf_norm = tf.norm(G_diff, axis=2, ord=2, keep_dims=False) # => [n, k]
-    rbf = tf.multiply(tf.square(rbf_norm), tf.log(rbf_norm + eps)) # => [n, k]
+    rbf_norm = tf.norm(G_diff, axis=2, ord=2, keepdims=False) # => [n, k]
+    rbf = tf.multiply(tf.square(rbf_norm), tf.compat.v1.log(rbf_norm + eps)) # => [n, k]
     G_lifted = tf.concat([ tf.ones([n, 1]), G, rbf ], axis=1) # => [n, k+3]
     batch_G_lifted = tf.tile(tf.expand_dims(G_lifted, 0), [batch_size,1,1]) # => [B, n, k+3]
 
     batch_Gp = tf.matmul(batch_G_lifted, batch_T)
     return batch_Gp
-  
+
   def _batch_sample(self, images, batch_sampling_grid):
     """
     Args:
@@ -151,10 +151,10 @@ class SpatialTransformer(object):
     batch_I10 = _get_pixels(images, batch_Gx1, batch_Gy0, batch_indices)
     batch_I11 = _get_pixels(images, batch_Gx1, batch_Gy1, batch_indices) # => [B, n, d]
 
-    batch_Gx0 = tf.to_float(batch_Gx0)
-    batch_Gx1 = tf.to_float(batch_Gx1)
-    batch_Gy0 = tf.to_float(batch_Gy0)
-    batch_Gy1 = tf.to_float(batch_Gy1)
+    batch_Gx0 = tf.cast(batch_Gx0, tf.float32)
+    batch_Gx1 = tf.cast(batch_Gx1, tf.float32)
+    batch_Gy0 = tf.cast(batch_Gy0, tf.float32)
+    batch_Gy1 = tf.cast(batch_Gy1, tf.float32)
 
     batch_w00 = (batch_Gx1 - batch_Gx) * (batch_Gy1 - batch_Gy)
     batch_w01 = (batch_Gx1 - batch_Gx) * (batch_Gy - batch_Gy0)
@@ -173,10 +173,10 @@ class SpatialTransformer(object):
     output_maps = tf.cast(output_maps, dtype=images.dtype)
 
     if self._summarize_activations:
-      tf.summary.image('InputImage1', images[:2], max_outputs=2)
-      tf.summary.image('InputImage2', images[-2:], max_outputs=2)
-      tf.summary.image('RectifiedImage1', output_maps[:2], max_outputs=2)
-      tf.summary.image('RectifiedImage2', output_maps[-2:], max_outputs=2)
+      tf.compat.v1.summary.image('InputImage1', images[:2], max_outputs=2)
+      tf.compat.v1.summary.image('InputImage2', images[-2:], max_outputs=2)
+      tf.compat.v1.summary.image('RectifiedImage1', output_maps[:2], max_outputs=2)
+      tf.compat.v1.summary.image('RectifiedImage2', output_maps[-2:], max_outputs=2)
 
     return output_maps
 
@@ -249,5 +249,5 @@ class SpatialTransformer(object):
       init_biases = init_ctrl_pts
     else:
       raise ValueError('Unknown activation type: {}'.format(activation))
-    
+
     return init_biases

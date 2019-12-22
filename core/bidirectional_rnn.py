@@ -20,7 +20,7 @@ class DynamicBidirectionalRnn(object):
     self._summarize_activations = summarize_activations
 
   def predict(self, inputs, scope=None):
-    with tf.variable_scope(scope, 'BidirectionalRnn', [inputs]) as scope:
+    with tf.compat.v1.variable_scope(scope, 'BidirectionalRnn', [inputs]) as scope:
       (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(
         self._fw_cell, self._bw_cell, inputs, time_major=False, dtype=tf.float32)
       rnn_outputs = tf.concat([output_fw, output_bw], axis=2)
@@ -61,9 +61,9 @@ class StaticBidirectionalRnn(object):
     self._num_output_units = num_output_units
     self._fc_hyperparams = fc_hyperparams
     self._summarize_activations = summarize_activations
-  
+
   def predict(self, inputs, scope=None):
-    with tf.variable_scope(scope, 'BidirectionalRnn', [inputs]) as scope:
+    with tf.compat.v1.variable_scope(scope, 'BidirectionalRnn', [inputs]) as scope:
       inputs_list = tf.unstack(inputs, axis=1)
       outputs_list, _, _ = tf.nn.static_bidirectional_rnn(
         self._fw_cell,
@@ -90,5 +90,5 @@ class StaticBidirectionalRnn(object):
             self._num_output_units,
             activation_fn=tf.nn.relu
           )
-    
+
     return rnn_outputs
