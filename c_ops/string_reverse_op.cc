@@ -41,7 +41,7 @@ public:
     Tensor* output_string = nullptr;
     OP_REQUIRES_OK(context, context->allocate_output(0, {num_strings}, &output_string));
     auto output_string_tensor = output_string->tensor<string, 1>();
-    
+
     for (int i = 0; i < num_strings; i++) {
       string orig_string = input_string_tensor(i);
       string reversed_string = orig_string;

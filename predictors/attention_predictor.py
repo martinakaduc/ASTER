@@ -144,11 +144,11 @@ class AttentionPredictor(predictor.Predictor):
     assert 'scores' in predictions_dict
     with tf.compat.v1.variable_scope(scope, 'Postprocess', list(predictions_dict.values())):
       text = self._label_map.labels_to_text(predictions_dict['labels'])
-      if self._reverse:
-        text = text[::-1]
-        # text = ops.string_reverse(text)
+      # if self._reverse:
+      #   text = ops.reversed_string(text)
       scores = predictions_dict['scores']
-    return {'text': text, 'scores': scores}
+      reverse = [self._reverse for _ in range(text.shape[0])]
+    return {'text': text, 'scores': scores, 'reverse': reverse}
 
   def _build_decoder_cell(self, feature_maps):
     attention_mechanism = self._build_attention_mechanism(feature_maps)

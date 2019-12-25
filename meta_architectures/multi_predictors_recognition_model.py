@@ -84,6 +84,7 @@ class MultiPredictorsRecognitionModel(model.Model):
     with tf.compat.v1.variable_scope(scope, 'Postprocess', list(predictions_dict.values())):
       recognition_text_list = []
       recognition_scores_list = []
+      recognition_reverse_list = []
       for name, predictor in self._predictors_dict.items():
         predictor_outputs = predictor.postprocess({
           k.split('/')[1] : v
@@ -91,8 +92,9 @@ class MultiPredictorsRecognitionModel(model.Model):
         }, scope='{}/Postprocess'.format(name))
         recognition_text_list.append(predictor_outputs['text'])
         recognition_scores_list.append(predictor_outputs['scores'])
+        recognition_reverse_list.append(predictor_outputs['reverse'])
       aggregated_recognition_dict = self._aggregate_recognition_results(
-        recognition_text_list, recognition_scores_list)
+        recognition_text_list, recognition_scores_list, recognition_reverse_list)
     return aggregated_recognition_dict
 
   def provide_groundtruth(self, groundtruth_lists, scope=None):
@@ -124,19 +126,21 @@ class MultiPredictorsRecognitionModel(model.Model):
         self._groundtruth_dict['control_points_mask'] = has_groundtruth_keypoints
         self._groundtruth_dict['control_points'] = groundtruth_control_points
 
-  def _aggregate_recognition_results(self, text_list, scores_list, scope=None):
+  def _aggregate_recognition_results(self, text_list, scores_list, reverse_list, scope=None):
     """Aggregate recognition results by picking up ones with highest scores.
     Args
       text_list: a list of tensors with shape [batch_size]
       scores_list: a list of tensors with shape [batch_size]
     """
-    with tf.compat.v1.variable_scope(scope, 'AggregateRecognitionResults', (text_list + scores_list)):
+    with tf.compat.v1.variable_scope(scope, 'AggregateRecognitionResults', (text_list + scores_list + reverse_list)):
       stacked_text = tf.stack(text_list, axis=1)
       stacked_scores = tf.stack(scores_list, axis=1)
+      stacked_reverse = tf.stack(reverse_list, axis=1)
       argmax_scores = tf.argmax(stacked_scores, axis=1)
       batch_size = shape_utils.combined_static_and_dynamic_shape(stacked_text)[0]
       indices = tf.stack([tf.range(batch_size, dtype=tf.int64), argmax_scores], axis=1)
       aggregated_text = tf.gather_nd(stacked_text, indices)
       aggregated_scores = tf.gather_nd(stacked_scores, indices)
-      recognition_dict = {'text': aggregated_text, 'scores': aggregated_scores}
+      aggregated_reverse = tf.gather_nd(stacked_reverse, indices)
+      recognition_dict = {'text': aggregated_text, 'scores': aggregated_scores, 'reverse': aggregated_reverse}
     return recognition_dict

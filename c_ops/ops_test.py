@@ -15,7 +15,7 @@ class OpsTest(tf.test.TestCase):
         test_reversed_strings.eval(),
         np.asarray([b'olleH', b'dlrow', b'1=?-`kc80l1', b''])
       )
-  
+
   def test_divide_curve(self):
     num_keypoints = 128
     fit_points = np.array([
@@ -37,7 +37,7 @@ class OpsTest(tf.test.TestCase):
         'key_points': key_points
       })
       self.assertAllEqual(sess_outputs['key_points'].shape, (1, 40))
-    
+
     import matplotlib.pyplot as plt
     plt.subplot(1,2,1)
     plt.scatter(curve_points[0,::2], curve_points[0,1::2])

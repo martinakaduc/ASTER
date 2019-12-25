@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 flags = tf.app.flags
 flags.DEFINE_string('exp_dir', 'aster/experiments/demo/',
                     'Directory containing config, training log and evaluations')
-flags.DEFINE_string('input_image', 'aster/data/10_ZCSU7023100 45G1_True_0.jpg', 'Demo image')
+flags.DEFINE_string('input_image', 'aster/data/101_TCNU7391392 45G1_True_3.jpg', 'Demo image')
 FLAGS = flags.FLAGS
 
 
@@ -55,6 +55,7 @@ def main(_):
   predictions_dict = model.predict(tf.expand_dims(resized_image_tensor, 0))
   recognitions = model.postprocess(predictions_dict)
   recognition_text = recognitions['text'][0]
+  reverse_text = recognitions['reverse']
   control_points = predictions_dict['control_points'],
   rectified_images = predictions_dict['rectified_images']
 
@@ -64,6 +65,7 @@ def main(_):
   fetches = {
     'original_image': input_image_tensor,
     'recognition_text': recognition_text,
+    'reverse_text': reverse_text,
     'control_points': predictions_dict['control_points'],
     'rectified_images': predictions_dict['rectified_images'],
   }
@@ -79,7 +81,10 @@ def main(_):
     saver.restore(sess, checkpoint)
     sess_outputs = sess.run(fetches, feed_dict={input_image_str_tensor: input_image_str})
 
-  print('Recognized text: {}'.format(sess_outputs['recognition_text'].decode('utf-8')))
+  text_result = sess_outputs['recognition_text'].decode('utf-8')
+  if sess_outputs['reverse_text'][0]:
+      text_result = text_result[::-1]
+  print('Recognized text: {}'.format(text_result))
 
   rectified_image = sess_outputs['rectified_images'][0]
   rectified_image_pil = Image.fromarray((128 * (rectified_image + 1.0)).astype(np.uint8))
