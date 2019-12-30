@@ -56,6 +56,7 @@ def main(_):
   recognitions = model.postprocess(predictions_dict)
   recognition_text = recognitions['text'][0]
   reverse_text = recognitions['reverse']
+  scores = recognitions['scores']
   control_points = predictions_dict['control_points'],
   rectified_images = predictions_dict['rectified_images']
 
@@ -66,6 +67,7 @@ def main(_):
     'original_image': input_image_tensor,
     'recognition_text': recognition_text,
     'reverse_text': reverse_text,
+    'scores': scores,
     'control_points': predictions_dict['control_points'],
     'rectified_images': predictions_dict['rectified_images'],
   }
@@ -85,6 +87,7 @@ def main(_):
   if sess_outputs['reverse_text'][0]:
       text_result = text_result[::-1]
   print('Recognized text: {}'.format(text_result))
+  print('Score: ' + str(sess_outputs['scores'][0]))
 
   rectified_image = sess_outputs['rectified_images'][0]
   rectified_image_pil = Image.fromarray((128 * (rectified_image + 1.0)).astype(np.uint8))
